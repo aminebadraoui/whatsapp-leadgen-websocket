@@ -1,0 +1,38 @@
+2024/10/16-14:25:10.457 b30b Reusing MANIFEST /Users/amean/Desktop/web/whatsapp-leadgen/whatsapp-leadgen-server/.wwebjs_auth/session/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2024/10/16-14:25:10.457 b30b Recovering log #715
+2024/10/16-14:25:10.468 b30b Reusing old log /Users/amean/Desktop/web/whatsapp-leadgen/whatsapp-leadgen-server/.wwebjs_auth/session/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/000715.log 
+2024/10/16-14:25:12.536 16203 Level-0 table #729: started
+2024/10/16-14:25:12.543 16203 Level-0 table #729: 150052 bytes OK
+2024/10/16-14:25:12.548 16203 Delete type=0 #715
+2024/10/16-14:25:12.549 16203 Manual compaction at level-0 from '\x00 \x00\x00\x00' @ 72057594037927935 : 1 .. '\x00!\x00\x00\x00' @ 0 : 0; will stop at '\x00 \x00\x00\x05' @ 2562777 : 1
+2024/10/16-14:25:12.549 16203 Compacting 1@0 + 1@1 files
+2024/10/16-14:25:12.556 16203 Generated table #730@0: 3535 keys, 71303 bytes
+2024/10/16-14:25:12.561 16203 Generated table #731@0: 296 keys, 30102 bytes
+2024/10/16-14:25:12.561 16203 Compacted 1@0 + 1@1 files => 101405 bytes
+2024/10/16-14:25:12.568 16203 compacted to: files[ 0 2 16 0 0 0 0 ]
+2024/10/16-14:25:12.568 16203 Delete type=2 #729
+2024/10/16-14:25:12.568 16203 Manual compaction at level-0 from '\x00 \x00\x00\x05' @ 2562777 : 1 .. '\x00!\x00\x00\x00' @ 0 : 0; will stop at (end)
+2024/10/16-14:25:13.721 1f103 Compacting 1@1 + 7@2 files
+2024/10/16-14:25:13.765 1f103 Generated table #732@1: 43088 keys, 2220258 bytes
+2024/10/16-14:25:13.815 1f103 Generated table #733@1: 44002 keys, 2232138 bytes
+2024/10/16-14:25:13.842 1f103 Generated table #734@1: 11669 keys, 2162623 bytes
+2024/10/16-14:25:13.867 1f103 Generated table #735@1: 2692 keys, 2150585 bytes
+2024/10/16-14:25:13.885 1f103 Generated table #736@1: 1803 keys, 2139920 bytes
+2024/10/16-14:25:13.919 1f103 Generated table #737@1: 23542 keys, 2226178 bytes
+2024/10/16-14:25:13.958 1f103 Generated table #738@1: 29878 keys, 2229493 bytes
+2024/10/16-14:25:13.963 1f103 Generated table #739@1: 97 keys, 31798 bytes
+2024/10/16-14:25:13.963 1f103 Compacted 1@1 + 7@2 files => 15392993 bytes
+2024/10/16-14:25:13.970 1f103 compacted to: files[ 0 1 17 0 0 0 0 ]
+2024/10/16-14:25:13.970 1f103 Delete type=2 #719
+2024/10/16-14:25:13.970 1f103 Delete type=2 #725
+2024/10/16-14:25:13.970 1f103 Delete type=2 #724
+2024/10/16-14:25:13.970 1f103 Delete type=2 #730
+2024/10/16-14:25:13.970 1f103 Delete type=2 #718
+2024/10/16-14:25:13.970 1f103 Delete type=2 #723
+2024/10/16-14:25:13.970 1f103 Delete type=2 #722
+2024/10/16-14:25:13.970 1f103 Delete type=2 #720
+2024/10/16-14:25:13.970 1f103 Delete type=2 #721
+2024/10/16-14:25:20.307 1f503 Compacting 1@1 + 1@2 files
+2024/10/16-14:25:20.351 1f503 Generated table #740@1: 71833 keys, 1565913 bytes
+2024/10/16-14:25:20.351 1f503 Compacted 1@1 + 1@2 files => 1565913 bytes
+2024/10/16-14:25:20.362 1f503 compacted to: files[ 0 0 17 0 0 0 0 ]

@@ -22,7 +22,7 @@ jobs:
         context: .
         file: ./Dockerfile.prod
         push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/mnfst-starter-server:prod
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/whatsapp-leadgen-server:prod
         build-args: |
           DATABASE_URL=${{ secrets.DATABASE_URL }}
           JWT_SECRET=${{ secrets.JWT_SECRET }}
@@ -33,4 +33,4 @@ jobs:
         context: .
         file: ./Dockerfile.dev
         push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/mnfst-starter-server:dev
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/whatsapp-leadgen-server:dev
