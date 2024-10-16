@@ -202,6 +202,19 @@ app.post('/api/buckets', async (req, res) => {
     }
 });
 
+app.get('/api/buckets/:bucketId/contacts', async (req, res) => {
+    try {
+        const { bucketId } = req.params;
+        const contacts = await prisma.contact.findMany({
+            where: { bucketId },
+        });
+        res.json(contacts);
+    } catch (error) {
+        console.error('Error fetching bucket contacts:', error);
+        res.status(500).json({ error: 'Error fetching bucket contacts' });
+    }
+});
+
 app.post('/api/export', async (req, res) => {
     try {
         const { bucketId, contacts } = req.body;
