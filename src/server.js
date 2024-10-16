@@ -5,6 +5,10 @@ const { Client, LocalAuth } = require('whatsapp-web.js');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const { PrismaClient } = require('@prisma/client');
+
+const prisma = new PrismaClient();
+
 
 const app = express();
 const server = http.createServer(app);
@@ -167,6 +171,77 @@ wss.on('connection', (ws) => {
             }
         }
     });
+});
+
+
+// REST API endpoints
+app.get('/api/buckets', async (req, res) => {
+    try {
+        const buckets = await prisma.bucket.findMany({
+            include: { _count: { select: { contacts: true } } }
+        });
+        res.json(buckets.map(bucket => ({
+            ...bucket,
+            contacts: { length: bucket._count.contacts }
+        })));
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error fetching buckets' });
+    }
+});
+
+app.post('/api/buckets', async (req, res) => {
+    try {
+        const { name } = req.body;
+        const newBucket = await prisma.bucket.create({
+            data: { name }
+        });
+        res.json(newBucket);
+    } catch (error) {
+        res.status(500).json({ error: 'Error creating bucket' });
+    }
+});
+
+app.post('/api/export', async (req, res) => {
+    try {
+        const { bucketId, contacts } = req.body;
+
+        // Get existing contacts in the bucket
+        const existingContacts = await prisma.contact.findMany({
+            where: { bucketId },
+            select: { whatsappId: true }
+        });
+
+        const existingWhatsappIds = new Set(existingContacts.map(c => c.whatsappId));
+
+        // Filter out contacts that already exist in the bucket
+        const newContacts = contacts.filter(contact => !existingWhatsappIds.has(contact.id));
+
+        // Add new contacts to the bucket
+        const createdContacts = await prisma.$transaction(
+            newContacts.map(contact =>
+                prisma.contact.create({
+                    data: {
+                        whatsappId: contact.id,
+                        name: contact.name,
+                        phoneNumber: contact.phoneNumber,
+                        groupId: contact.groupId,
+                        groupName: contact.groupName,
+                        bucketId: bucketId
+                    }
+                })
+            )
+        );
+
+        res.json({
+            message: 'Contacts exported successfully',
+            addedContacts: createdContacts.length,
+            skippedContacts: contacts.length - createdContacts.length
+        });
+    } catch (error) {
+        console.error('Error exporting contacts:', error);
+        res.status(500).json({ error: 'Error exporting contacts' });
+    }
 });
 
 const port = process.env.PORT || 5000;

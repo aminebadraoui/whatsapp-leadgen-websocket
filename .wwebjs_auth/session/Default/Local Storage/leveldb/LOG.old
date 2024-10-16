@@ -1,3 +1,6 @@
-2024/10/16-14:25:09.658 9f03 Reusing MANIFEST /Users/amean/Desktop/web/whatsapp-leadgen/whatsapp-leadgen-server/.wwebjs_auth/session/Default/Local Storage/leveldb/MANIFEST-000001
-2024/10/16-14:25:09.659 9f03 Recovering log #4
-2024/10/16-14:25:09.659 9f03 Reusing old log /Users/amean/Desktop/web/whatsapp-leadgen/whatsapp-leadgen-server/.wwebjs_auth/session/Default/Local Storage/leveldb/000004.log 
+2024/10/16-15:43:48.334 9b03 Reusing MANIFEST /Users/amean/Desktop/web/whatsapp-leadgen/whatsapp-leadgen-server/.wwebjs_auth/session/Default/Local Storage/leveldb/MANIFEST-000001
+2024/10/16-15:43:48.335 9b03 Recovering log #3
+2024/10/16-15:43:48.335 9b03 Reusing old log /Users/amean/Desktop/web/whatsapp-leadgen/whatsapp-leadgen-server/.wwebjs_auth/session/Default/Local Storage/leveldb/000003.log 
+2024/10/16-15:44:49.314 b203 Level-0 table #5: started
+2024/10/16-15:44:49.321 b203 Level-0 table #5: 17747 bytes OK
+2024/10/16-15:44:49.328 b203 Delete type=0 #3
