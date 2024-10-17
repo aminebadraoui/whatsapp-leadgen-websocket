@@ -3,95 +3,82 @@ const http = require('http');
 const WebSocket = require('ws');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const cors = require('cors');
-const fs = require('fs');
-const path = require('path');
 const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
 
-
 const app = express();
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocket.Server({ noServer: true });
 
-app.use(cors());
-app.use(express.json());
-
-let client = null;
-let isInitializing = false;
+let client;
 let isAuthenticated = false;
 
-const SESSION_FILE_PATH = path.join(__dirname, 'whatsapp-session.json');
+app.use(cors({
+    origin: '*', // Replace with your frontend URL
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type']
+}));
 
-function saveSession() {
-    if (client && client.pupPage) {
-        const sessionData = client.pupPage.target()._session.toJSON();
-        fs.writeFileSync(SESSION_FILE_PATH, JSON.stringify(sessionData));
-    }
-}
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-function sessionExists() {
-    return fs.existsSync(SESSION_FILE_PATH);
-}
+// Initialize WhatsApp client
+
+let clientReady = false;
 
 async function initializeClient() {
-    if (client || isInitializing) return;
-
-    isInitializing = true;
-    console.log('Initializing WhatsApp client...');
-
+    console.log('Starting new WhatsApp client initialization...');
     client = new Client({
         authStrategy: new LocalAuth(),
         puppeteer: {
-            headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
+            args: ['--no-sandbox'],
+            headless: false
         }
     });
 
     client.on('qr', (qr) => {
-        console.log('QR Code received, please scan');
-        wss.clients.forEach((client) => {
-            if (client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify({ qr }));
+        console.log('QR RECEIVED', qr);
+        wss.clients.forEach((ws) => {
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'qr', qr }));
             }
         });
     });
 
     client.on('ready', () => {
-        console.log('Client is ready!');
-        isAuthenticated = true;
-        isInitializing = false;
-        wss.clients.forEach((client) => {
-            if (client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify({ authenticated: true }));
+        console.log('WhatsApp client is ready!');
+        clientReady = true;
+        wss.clients.forEach((ws) => {
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'whatsapp_ready' }));
             }
         });
     });
 
     client.on('authenticated', () => {
-        console.log('Client authenticated');
+        console.log('WhatsApp client authenticated');
         isAuthenticated = true;
-        isInitializing = false;
     });
 
     client.on('auth_failure', (msg) => {
-        console.error('Authentication failure:', msg);
+        console.error('WhatsApp authentication failure:', msg);
         isAuthenticated = false;
-        isInitializing = false;
+    });
+
+    client.on('disconnected', (reason) => {
+        console.log('WhatsApp client was disconnected', reason);
+        clientReady = false;
+        setTimeout(initializeClient, 5000);
     });
 
     try {
-        console.log('Starting client initialization...');
         await client.initialize();
-        console.log('Client initialization completed');
     } catch (error) {
-        console.error('Failed to initialize client:', error);
-        client = null;
-        isInitializing = false;
-        isAuthenticated = false;
+        console.error('Error initializing WhatsApp client:', error);
+        setTimeout(initializeClient, 5000);
     }
 }
-
 
 async function getGroups() {
     if (!client || !client.pupPage) {
@@ -134,45 +121,6 @@ async function getGroupMembers(groupId) {
         totalMembers: members.length
     };
 }
-
-wss.on('connection', (ws) => {
-    console.log('New WebSocket connection established');
-
-    if (isAuthenticated) {
-        ws.send(JSON.stringify({ authenticated: true }));
-    } else {
-        initializeClient();
-    }
-
-
-    ws.on('message', async (message) => {
-        console.log('Received message:', message);
-        const data = JSON.parse(message);
-        if (data.action === 'getGroups') {
-            try {
-                const groupsData = await getGroups();
-                console.log('Sending groups data:', groupsData);
-                ws.send(JSON.stringify({ action: 'groupsReceived', ...groupsData }));
-            } catch (error) {
-                console.error('Error getting groups:', error);
-                ws.send(JSON.stringify({ action: 'error', message: 'Error retrieving groups' }));
-            }
-        }
-
-        if (data.action === 'getGroupMembers') {
-            try {
-                const { groupId } = data;
-                const membersData = await getGroupMembers(groupId);
-                console.log('Sending group members data:', membersData);
-                ws.send(JSON.stringify({ action: 'groupMembersReceived', ...membersData }));
-            } catch (error) {
-                console.error('Error getting group members:', error);
-                ws.send(JSON.stringify({ action: 'error', message: 'Error retrieving group members' }));
-            }
-        }
-    });
-});
-
 
 // REST API endpoints
 app.get('/api/buckets', async (req, res) => {
@@ -257,11 +205,196 @@ app.post('/api/export', async (req, res) => {
     }
 });
 
-const port = process.env.PORT || 5000;
-server.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
-    if (sessionExists()) {
-        console.log('Existing session found, attempting to restore...');
-        initializeClient();
+// Get all message templates
+app.get('/api/message-templates', async (req, res) => {
+    try {
+        const templates = await prisma.messageTemplate.findMany();
+        console.log('Templates:', templates);
+        res.json(templates);
+    } catch (error) {
+        console.error('Error fetching message templates:', error);
+        res.status(500).json({ error: 'Error fetching message templates' });
     }
 });
+
+// Create a new message template
+app.post('/api/message-templates', async (req, res) => {
+    try {
+        const { title, message } = req.body;
+        const newTemplate = await prisma.messageTemplate.create({
+            data: { title, message },
+        });
+        res.json(newTemplate);
+    } catch (error) {
+        console.error('Error creating message template:', error);
+        res.status(500).json({ error: 'Error creating message template' });
+    }
+});
+
+// Get a specific message template
+app.get('/api/message-templates/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const template = await prisma.messageTemplate.findUnique({
+            where: { id },
+        });
+        if (template) {
+            res.json(template);
+        } else {
+            res.status(404).json({ error: 'Message template not found' });
+        }
+    } catch (error) {
+        console.error('Error fetching message template:', error);
+        res.status(500).json({ error: 'Error fetching message template' });
+    }
+});
+
+// Update a message template
+app.put('/api/message-templates/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { title, message } = req.body;
+        const updatedTemplate = await prisma.messageTemplate.update({
+            where: { id },
+            data: { title, message },
+        });
+        res.json(updatedTemplate);
+    } catch (error) {
+        console.error('Error updating message template:', error);
+        res.status(500).json({ error: 'Error updating message template' });
+    }
+});
+
+// Delete a message template
+app.delete('/api/message-templates/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        await prisma.messageTemplate.delete({
+            where: { id },
+        });
+        res.json({ message: 'Template deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting message template:', error);
+        res.status(500).json({ error: 'Error deleting message template' });
+    }
+});
+
+// Send a message to a contact
+app.post('/api/send-message', async (req, res) => {
+    try {
+        const { contactId, message } = req.body;
+
+        if (!clientReady) {
+            return res.status(503).json({ error: 'WhatsApp client is not ready' });
+        }
+
+        const contact = await prisma.contact.findUnique({
+            where: { id: contactId }
+        });
+
+        if (!contact) {
+            return res.status(404).json({ error: 'Contact not found' });
+        }
+
+        const chatId = contact.phoneNumber.includes('@c.us')
+            ? contact.phoneNumber
+            : `${contact.phoneNumber.replace(/[^\d]/g, '')}@c.us`;
+
+        console.log('Sending message to:', chatId);
+        console.log('Message content:', message);
+
+        const sentMessage = await client.sendMessage(chatId, message);
+        console.log('Message sent, response:', sentMessage);
+
+        res.json({ success: true, message: 'Message sent successfully', messageId: sentMessage.id._serialized });
+    } catch (error) {
+        console.error('Error sending message:', error);
+        res.status(500).json({ error: 'Error sending message', details: error.message });
+    }
+});
+
+app.get('/api/client-status', (req, res) => {
+    res.json({
+        isReady: clientReady,
+        isAuthenticated: isAuthenticated
+    });
+});
+
+wss.on('connection', (ws) => {
+    console.log('New WebSocket connection established');
+
+    ws.on('error', (error) => {
+        console.error('WebSocket error:', error);
+    });
+
+    ws.on('close', () => {
+        console.log('WebSocket connection closed');
+    });
+
+
+
+    if (isAuthenticated) {
+        console.log('Client already authenticated, sending authenticated message');
+        ws.send(JSON.stringify({ authenticated: true }));
+    } else {
+        console.log('Client not authenticated, waiting for WhatsApp client initialization');
+    }
+
+
+    ws.on('message', async (message) => {
+        console.log('Received message:', message);
+        const data = JSON.parse(message);
+
+        if (data.action === 'getGroups') {
+            try {
+                const groupsData = await getGroups();
+                console.log('Sending groups data:', groupsData);
+                ws.send(JSON.stringify({ action: 'groupsReceived', ...groupsData }));
+            } catch (error) {
+                console.error('Error getting groups:', error);
+                ws.send(JSON.stringify({ action: 'error', message: 'Error retrieving groups' }));
+            }
+        }
+
+        if (data.action === 'getGroupMembers') {
+            try {
+                const { groupId } = data;
+                const membersData = await getGroupMembers(groupId);
+                console.log('Sending group members data:', membersData);
+                ws.send(JSON.stringify({ action: 'groupMembersReceived', ...membersData }));
+            } catch (error) {
+                console.error('Error getting group members:', error);
+                ws.send(JSON.stringify({ action: 'error', message: 'Error retrieving group members' }));
+            }
+        }
+    });
+});
+
+
+function startServer() {
+    try {
+        console.log('Initializing WhatsApp client...');
+        initializeClient();
+
+        const PORT = process.env.PORT || 5000;
+        server.listen(PORT, () => {
+            console.log(`HTTP Server is running on port ${PORT}`);
+            console.log(`WebSocket Server is listening on ws://localhost:${PORT}/ws`);
+        });
+    } catch (err) {
+        console.error('Error starting server:', err);
+        process.exit(1);
+    }
+}
+
+server.on('upgrade', (request, socket, head) => {
+    if (request.url === '/ws') {
+        wss.handleUpgrade(request, socket, head, (ws) => {
+            wss.emit('connection', ws, request);
+        });
+    } else {
+        socket.destroy();
+    }
+});
+
+startServer();
