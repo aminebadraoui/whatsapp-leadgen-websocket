@@ -392,7 +392,11 @@ function startServer() {
         const PORT = 5000;
         server.listen(PORT, '0.0.0.0', () => {
             console.log(`HTTP Server is running on port ${PORT}`);
-            console.log(`WebSocket Server is listening on ws://0.0.0.0:${PORT}/ws`);
+            console.log(`WebSocket Server is listening on ${process.env.NODE_ENV === 'production' ? 'wss' : 'ws'}://0.0.0.0:${PORT}/ws`);
+            console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
+            console.log(`server: ${server.address()}`)
+            console.log(`wss: ${wss.address}`)
+
         });
 
     } catch (err) {
