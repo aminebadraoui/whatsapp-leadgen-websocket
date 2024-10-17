@@ -387,7 +387,7 @@ function startServer() {
         console.log('Initializing WhatsApp client...');
         initializeClient();
 
-        const PORT = process.env.PORT || 5000;
+        const PORT = process.env.PORT || 5006;
         server.listen(PORT, () => {
             console.log(`HTTP Server is running on port ${PORT}`);
             console.log(`WebSocket Server is listening on ws://localhost:${PORT}/ws`);
