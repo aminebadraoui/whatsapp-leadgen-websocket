@@ -6,7 +6,7 @@ const { Client, LocalAuth } = require('whatsapp-web.js');
 const cors = require('cors');
 const { PrismaClient } = require('@prisma/client');
 const fs = require('fs');
-
+const puppeteer = require('puppeteer');
 const prisma = new PrismaClient();
 
 const app = express();
@@ -48,11 +48,37 @@ let clientReady = false;
 
 async function initializeClient() {
     console.log('Starting new WhatsApp client initialization...');
+    const browser = await puppeteer.launch({
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--single-process',
+            '--disable-gpu'
+        ],
+        headless: true,
+        defaultViewport: null,
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+    });
+
+    console.log('Puppeteer browser launched successfully');
+
+    const page = await browser.newPage();
+    console.log('New page created');
+
+    await page.goto('https://web.whatsapp.com', { waitUntil: 'networkidle0' });
+    console.log('Navigated to WhatsApp Web');
+
+    const pageTitle = await page.title();
+    console.log('Page title:', pageTitle);
+
     client = new Client({
         authStrategy: new LocalAuth(),
         puppeteer: {
-            args: ['--no-sandbox'],
-            headless: true
+            browser: browser
         }
     });
 

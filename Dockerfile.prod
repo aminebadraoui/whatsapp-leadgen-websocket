@@ -24,6 +24,10 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 
+# Create a directory for WhatsApp session data and set permissions
+RUN mkdir -p /app/.wwebjs_auth && chown -R node:node /app/.wwebjs_auth
+
+
 COPY --from=build /app .
 COPY src ./src 
 COPY prisma ./prisma 
