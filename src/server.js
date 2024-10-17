@@ -87,7 +87,9 @@ async function initializeClient() {
     });
 
     try {
+        console.log('Calling client.initialize()...');
         await client.initialize();
+        console.log('WhatsApp client initialized');
     } catch (error) {
         console.error('Error initializing WhatsApp client:', error);
         setTimeout(initializeClient, 5000);
@@ -345,17 +347,16 @@ wss.on('connection', (ws) => {
         console.log('WebSocket connection closed');
     });
 
+    console.log('Current isAuthenticated status:', isAuthenticated);
+    console.log('Current clientReady status:', clientReady);
+    console.log('WhatsApp client status:', client ? 'Initialized' : 'Not initialized');
 
-
-    if (isAuthenticated) {
-        console.log('Client already authenticated, sending authenticated message');
-        ws.send(JSON.stringify({ authenticated: true }));
+    if (isAuthenticated && clientReady) {
+        console.log('Client already authenticated and ready, sending authenticated message');
+        ws.send(JSON.stringify({ type: 'whatsapp_ready', authenticated: true }));
     } else {
-        console.log('Client not authenticated, waiting for WhatsApp client initialization');
-        console.log('Current isAuthenticated status:', isAuthenticated);
-        console.log('WhatsApp client status:', client ? 'Initialized' : 'Not initialized');
+        console.log('Client not authenticated or not ready, waiting for WhatsApp client initialization');
     }
-
 
     ws.on('message', async (message) => {
         console.log('Received message:', message);
