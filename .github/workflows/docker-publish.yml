@@ -26,6 +26,7 @@ jobs:
         build-args: |
           DATABASE_URL=${{ secrets.DATABASE_URL }}
           JWT_SECRET=${{ secrets.JWT_SECRET }}
+          NODE_ENV=production
 
     - name: Build and push development Docker image
       uses: docker/build-push-action@v4
