@@ -1,5 +1,6 @@
 const express = require('express');
 const http = require('http');
+const https = require('https');
 const WebSocket = require('ws');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const cors = require('cors');
@@ -8,7 +9,17 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 const app = express();
-const server = http.createServer(app);
+
+let server;
+if (process.env.NODE_ENV === 'production') {
+    server = https.createServer({
+        key: fs.readFileSync('/etc/letsencrypt/live/leadchatapp.com/privkey.pem'),
+        cert: fs.readFileSync('/etc/letsencrypt/live/leadchatapp.com/fullchain.pem')
+    }, app);
+} else {
+    server = http.createServer(app);
+}
+
 const wss = new WebSocket.Server({ noServer: true });
 
 let client;
