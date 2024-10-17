@@ -1,6 +1,5 @@
 const express = require('express');
 const http = require('http');
-const https = require('https');
 const WebSocket = require('ws');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const cors = require('cors');
@@ -10,20 +9,20 @@ const prisma = new PrismaClient();
 
 const app = express();
 
-let server;
-if (process.env.NODE_ENV === 'production') {
-    server = https.createServer({
-        key: fs.readFileSync('/etc/letsencrypt/live/leadchatapp.com/privkey.pem'),
-        cert: fs.readFileSync('/etc/letsencrypt/live/leadchatapp.com/fullchain.pem')
-    }, app);
-} else {
-    server = http.createServer(app);
-}
+const server = http.createServer(app);
 
-const wss = new WebSocket.Server({
-    server: server,
-    path: '/ws'
+server.on('upgrade', (request, socket, head) => {
+    if (request.url === '/ws') {
+        wss.handleUpgrade(request, socket, head, (ws) => {
+            wss.emit('connection', ws, request);
+        });
+    } else {
+        socket.destroy();
+    }
 });
+
+// Create a WebSocket server instance
+const wss = new WebSocket.Server({ noServer: true });
 
 let client;
 let isAuthenticated = false;
@@ -401,15 +400,5 @@ function startServer() {
         process.exit(1);
     }
 }
-
-server.on('upgrade', (request, socket, head) => {
-    if (request.url === '/ws') {
-        wss.handleUpgrade(request, socket, head, (ws) => {
-            wss.emit('connection', ws, request);
-        });
-    } else {
-        socket.destroy();
-    }
-});
 
 startServer();
