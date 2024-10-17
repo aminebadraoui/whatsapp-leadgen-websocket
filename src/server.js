@@ -20,7 +20,10 @@ if (process.env.NODE_ENV === 'production') {
     server = http.createServer(app);
 }
 
-const wss = new WebSocket.Server({ noServer: true });
+const wss = new WebSocket.Server({
+    server: server,
+    path: '/ws'
+});
 
 let client;
 let isAuthenticated = false;
@@ -387,11 +390,12 @@ function startServer() {
         console.log('Initializing WhatsApp client...');
         initializeClient();
 
-        const PORT = process.env.PORT || 5006;
-        server.listen(PORT, () => {
+        const PORT = 5000;
+        server.listen(PORT, '0.0.0.0', () => {
             console.log(`HTTP Server is running on port ${PORT}`);
-            console.log(`WebSocket Server is listening on ws://localhost:${PORT}/ws`);
+            console.log(`WebSocket Server is listening on ws://0.0.0.0:${PORT}/ws`);
         });
+
     } catch (err) {
         console.error('Error starting server:', err);
         process.exit(1);
