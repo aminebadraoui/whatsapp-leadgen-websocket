@@ -44,7 +44,7 @@ async function initializeClient() {
         authStrategy: new LocalAuth(),
         puppeteer: {
             args: ['--no-sandbox'],
-            headless: false
+            headless: true
         }
     });
 
