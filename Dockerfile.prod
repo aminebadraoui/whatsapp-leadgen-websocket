@@ -8,16 +8,30 @@ RUN npm install --only=production
 FROM node:20-alpine
 WORKDIR /app
 
-# Install dependencies for Puppeteer
-RUN apk add --no-cache \
+# Install dependencies
+RUN apt-get update && apt-get install -y \
     chromium \
-    nss \
-    freetype \
-    harfbuzz \
-    ca-certificates \
-    ttf-freefont \
-    nodejs \
-    yarn
+    libgconf-2-4 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libgdk-pixbuf2.0-0 \
+    libgtk-3-0 \
+    libgbm-dev \
+    libnss3-dev \
+    libxss-dev \
+    fonts-liberation \
+    libappindicator3-1 \
+    libasound2 \
+    libpangocairo-1.0-0 \
+    libpango-1.0-0 \
+    libcairo2 \
+    libxtst6 \
+    xvfb \
+    xauth \
+    xdg-utils \
+    wget \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Tell Puppeteer to use the installed Chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \

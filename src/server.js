@@ -49,6 +49,7 @@ let clientReady = false;
 async function initializeClient() {
     console.log('Starting new WhatsApp client initialization...');
     const browser = await puppeteer.launch({
+        executablePath: '/usr/bin/chromium',
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -59,9 +60,7 @@ async function initializeClient() {
             '--single-process',
             '--disable-gpu'
         ],
-        headless: true,
-        defaultViewport: null,
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+        headless: 'new'
     });
 
     console.log('Puppeteer browser launched successfully');
