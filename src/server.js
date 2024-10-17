@@ -352,6 +352,8 @@ wss.on('connection', (ws) => {
         ws.send(JSON.stringify({ authenticated: true }));
     } else {
         console.log('Client not authenticated, waiting for WhatsApp client initialization');
+        console.log('Current isAuthenticated status:', isAuthenticated);
+        console.log('WhatsApp client status:', client ? 'Initialized' : 'Not initialized');
     }
 
 
