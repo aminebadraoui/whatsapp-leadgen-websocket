@@ -18,6 +18,11 @@ if (process.env.NODE_ENV === 'production') {
     const ca = fs.readFileSync('/etc/letsencrypt/live/leadchatapp.com/chain.pem', 'utf8');
 
     const credentials = { key: privateKey, cert: certificate, ca: ca };
+
+    console.log(`privateKey ${privateKey}`)
+    console.log(`certificate ${certificate}`)
+    console.log(`ca ${ca}`)
+    console.log(`credentials ${credentials}`)
     server = https.createServer(credentials, app);
 } else {
     server = http.createServer(app);
