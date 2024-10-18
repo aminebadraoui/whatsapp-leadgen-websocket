@@ -61,6 +61,9 @@ EXPOSE 5000
 
 # Create a non-root user and switch to it
 RUN adduser --disabled-password --gecos '' appuser
+
+COPY --chown=appuser:appuser /etc/letsencrypt /etc/letsencrypt
+
 USER appuser
 
 CMD ["node", "src/server.js"]
