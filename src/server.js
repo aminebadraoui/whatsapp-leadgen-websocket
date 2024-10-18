@@ -18,22 +18,38 @@ console.log('Contents of parent directory:', fs.readdirSync('..'));
 
 let server;
 if (process.env.NODE_ENV === 'production') {
+    try {
+        const sslPath = path.join(process.cwd(), 'ssl');
+        console.log('SSL directory path:', sslPath);
+        const sslFiles = fs.readdirSync(sslPath);
+        console.log('Contents of SSL directory:', sslFiles);
 
-    const sslPath = path.join(process.cwd(), 'ssl');
-    console.log('SSL directory path:', sslPath);
-    console.log('Contents of SSL directory:', fs.readdirSync(sslPath));
+        const requiredFiles = ['privkey.pem', 'cert.pem', 'chain.pem'];
+        for (const file of requiredFiles) {
+            const filePath = path.join(sslPath, file);
+            if (!sslFiles.includes(file)) {
+                throw new Error(`Required SSL file ${file} is missing`);
+            }
+            const stats = fs.statSync(filePath);
+            console.log(`File ${file} size:`, stats.size);
+            if (stats.size === 0) {
+                throw new Error(`SSL file ${file} is empty`);
+            }
+        }
 
-    const privateKey = fs.readFileSync(path.join(sslPath, 'privkey.pem')).toString();
-    const certificate = fs.readFileSync(path.join(sslPath, 'cert.pem')).toString();
-    const ca = fs.readFileSync(path.join(sslPath, 'chain.pem')).toString();
+        const privateKey = fs.readFileSync(path.join(sslPath, 'privkey.pem')).toString();
+        const certificate = fs.readFileSync(path.join(sslPath, 'cert.pem')).toString();
+        const ca = fs.readFileSync(path.join(sslPath, 'chain.pem')).toString();
 
-    const credentials = { key: privateKey, cert: certificate, ca: ca };
+        const credentials = { key: privateKey, cert: certificate, ca: ca };
 
-    console.log(`privateKey ${privateKey}`)
-    console.log(`certificate ${certificate}`)
-    console.log(`ca ${ca}`)
-    console.log(`credentials ${credentials}`)
-    server = https.createServer(credentials, app);
+        console.log('SSL files read successfully');
+        server = https.createServer(credentials, app);
+    } catch (error) {
+        console.error('Error reading SSL files:', error);
+        console.error('Error stack:', error.stack);
+        process.exit(1);
+    }
 } else {
     server = http.createServer(app);
 }
