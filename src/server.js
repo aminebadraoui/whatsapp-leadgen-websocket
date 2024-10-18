@@ -48,29 +48,31 @@ let clientReady = false;
 
 async function initializeClient() {
     console.log('Starting new WhatsApp client initialization...');
-    let browser;
+
     try {
         if (process.env.NODE_ENV === 'production') {
-            browser = await puppeteer.launch({
-                headless: true,
-                args: ['--no-sandbox', '--disable-setuid-sandbox'],
-                executablePath: '/usr/bin/chromium'
+            client = new Client({
+                authStrategy: new LocalAuth(),
+                puppeteer: {
+                    headless: true,
+                    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+                    executablePath: '/usr/bin/chromium'
+                }
             });
+
         } else {
-            browser = await puppeteer.launch({
-                headless: true,
-                args: ['--no-sandbox', '--disable-setuid-sandbox']
+            client = new Client({
+                authStrategy: new LocalAuth(),
+                puppeteer: {
+                    headless: true,
+                    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+                }
             });
         }
 
         console.log('Puppeteer browser launched successfully');
 
-        client = new Client({
-            authStrategy: new LocalAuth(),
-            puppeteer: {
-                browser: browser
-            }
-        });
+
 
         client.on('qr', (qr) => {
             console.log('QR RECEIVED', qr);
@@ -105,7 +107,7 @@ async function initializeClient() {
             console.log('WhatsApp client was disconnected', reason);
             clientReady = false;
             isAuthenticated = false;
-            await browser.close();
+
             setTimeout(initializeClient, 5000);
         });
 
@@ -114,9 +116,7 @@ async function initializeClient() {
         console.log('WhatsApp client initialized');
     } catch (error) {
         console.error('Error initializing WhatsApp client:', error);
-        if (browser) {
-            await browser.close();
-        }
+
         setTimeout(initializeClient, 5000);
     }
 }
