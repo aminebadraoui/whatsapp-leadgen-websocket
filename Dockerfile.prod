@@ -60,9 +60,6 @@ ENV NODE_ENV=production
 EXPOSE 5000
 
 # Create a non-root user
-RUN adduser --disabled-password --gecos '' appuser
-
-# Create a non-root user
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 # Set permissions for the SSL directory
