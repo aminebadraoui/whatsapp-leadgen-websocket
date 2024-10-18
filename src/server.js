@@ -23,9 +23,9 @@ if (process.env.NODE_ENV === 'production') {
     console.log('SSL directory path:', sslPath);
     console.log('Contents of SSL directory:', fs.readdirSync(sslPath));
 
-    const privateKey = fs.readFileSync(path.join(sslPath, 'privkey.pem'), 'utf8');
-    const certificate = fs.readFileSync(path.join(sslPath, 'cert.pem'), 'utf8');
-    const ca = fs.readFileSync(path.join(sslPath, 'chain.pem'), 'utf8');
+    const privateKey = fs.readFileSync(path.join(sslPath, 'privkey.pem')).toString();
+    const certificate = fs.readFileSync(path.join(sslPath, 'cert.pem')).toString();
+    const ca = fs.readFileSync(path.join(sslPath, 'chain.pem')).toString();
 
     const credentials = { key: privateKey, cert: certificate, ca: ca };
 
