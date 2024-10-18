@@ -62,11 +62,11 @@ EXPOSE 5000
 # Create a non-root user
 RUN adduser --disabled-password --gecos '' appuser
 
-# Create a directory for SSL certificates
+# Create a non-root user
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-RUN mkdir -p /app/ssl && chown appuser:appuser /app/ssl
-
-RUN touch /app/ssl/.keep && chmod 600 /app/ssl/.keep
+# Set permissions for the SSL directory
+RUN mkdir -p /etc/letsencrypt && chown -R appuser:appgroup /etc/letsencrypt
 
 USER appuser
 
