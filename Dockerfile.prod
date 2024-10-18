@@ -63,12 +63,7 @@ EXPOSE 5000
 RUN adduser --disabled-password --gecos '' appuser
 
 # Create a directory for SSL certificates
-RUN mkdir -p /app/ssl
-
-# Copy SSL certificates
-COPY --chown=appuser:appuser /etc/letsencrypt/live/leadchatapp.com/privkey.pem /app/ssl/
-COPY --chown=appuser:appuser /etc/letsencrypt/live/leadchatapp.com/cert.pem /app/ssl/
-COPY --chown=appuser:appuser /etc/letsencrypt/live/leadchatapp.com/chain.pem /app/ssl/
+RUN mkdir -p /app/ssl && chown appuser:appuser /app/ssl
 
 # Set proper permissions
 RUN chmod 644 /app/ssl/*
