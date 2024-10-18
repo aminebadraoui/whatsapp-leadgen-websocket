@@ -6,12 +6,12 @@ const { Client, LocalAuth } = require('whatsapp-web.js');
 const cors = require('cors');
 const { PrismaClient } = require('@prisma/client');
 const fs = require('fs');
-const puppeteer = require('puppeteer');
 const prisma = new PrismaClient();
 
 const app = express();
+const httpServer = http.createServer(app);
 
-let server;
+let wsServer;
 if (process.env.NODE_ENV === 'production') {
     const privateKey = fs.readFileSync('/etc/letsencrypt/live/leadchatapp.com/privkey.pem', 'utf8');
     const certificate = fs.readFileSync('/etc/letsencrypt/live/leadchatapp.com/cert.pem', 'utf8');
@@ -23,12 +23,12 @@ if (process.env.NODE_ENV === 'production') {
     console.log(`certificate ${certificate}`)
     console.log(`ca ${ca}`)
     console.log(`credentials ${credentials}`)
-    server = https.createServer(credentials, app);
+    wsServer = https.createServer(credentials, app);
 } else {
-    server = http.createServer(app);
+    wsServer = http.createServer(app);
 }
 
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocket.Server({ server: wsServer });
 
 let client;
 let isAuthenticated = false;
@@ -426,16 +426,16 @@ function startServer() {
         console.log('Initializing WhatsApp client...');
         initializeClient();
 
-        const PORT = 5000;
-        server.listen(PORT, '0.0.0.0', () => {
-            console.log(`HTTP Server is running on port ${PORT}`);
-            console.log(`WebSocket Server is listening on ${process.env.NODE_ENV === 'production' ? 'wss' : 'ws'}://0.0.0.0:${PORT}/ws`);
-            console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
-            console.log(`server: ${server.address()}`)
-            console.log(`wss: ${wss.address}`)
+        const API_PORT = 5000;
+        const WS_PORT = 6000;
 
+        httpServer.listen(API_PORT, '0.0.0.0', () => {
+            console.log(`HTTP Server is running on port ${API_PORT}`);
         });
 
+        wsServer.listen(WS_PORT, '0.0.0.0', () => {
+            console.log(`WebSocket Server is listening on ws://0.0.0.0:${WS_PORT}`);
+        });
     } catch (err) {
         console.error('Error starting server:', err);
         process.exit(1);
