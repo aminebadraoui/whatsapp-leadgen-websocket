@@ -63,9 +63,10 @@ EXPOSE 5000
 RUN adduser --disabled-password --gecos '' appuser
 
 # Create a directory for SSL certificates
+
 RUN mkdir -p /app/ssl && chown appuser:appuser /app/ssl
 
-RUN chmod 600 /app/ssl/*
+RUN touch /app/ssl/.keep && chmod 600 /app/ssl/.keep
 
 USER appuser
 
