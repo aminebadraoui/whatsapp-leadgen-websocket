@@ -10,7 +10,6 @@ WORKDIR /app
 
 # Install dependencies
 RUN apt-get update && apt-get install -y \
-    chromium-browser \
     chromium \
     libgconf-2-4 \
     libatk1.0-0 \
@@ -21,7 +20,6 @@ RUN apt-get update && apt-get install -y \
     libnss3-dev \
     libxss-dev \
     fonts-liberation \
-    libappindicator3-1 \
     libasound2 \
     libpangocairo-1.0-0 \
     libpango-1.0-0 \
