@@ -59,13 +59,4 @@ ENV NODE_ENV=production
 
 EXPOSE 5000
 
-# Create a non-root user
-RUN groupadd -g 1001 appgroup && \
-    useradd -u 1001 -g appgroup -s /bin/sh -m appuser
-
-# Set permissions for the SSL directory
-RUN mkdir -p /etc/letsencrypt && chown -R appuser:appgroup /etc/letsencrypt
-
-USER appuser
-
 CMD ["node", "src/server.js"]
