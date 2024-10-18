@@ -8,50 +8,22 @@ const { PrismaClient } = require('@prisma/client');
 const fs = require('fs');
 const puppeteer = require('puppeteer');
 const prisma = new PrismaClient();
-const path = require('path');
 
 const app = express();
 
-console.log('Current working directory:', process.cwd());
-console.log('Contents of current directory:', fs.readdirSync('.'));
-console.log('Contents of parent directory:', fs.readdirSync('..'));
-
 let server;
 if (process.env.NODE_ENV === 'production') {
-    try {
-        const sslPath = path.join(process.cwd(), 'ssl');
-        console.log('SSL directory path:', sslPath);
-        const sslFiles = fs.readdirSync(sslPath);
-        console.log('Contents of SSL directory:', sslFiles);
+    const privateKey = fs.readFileSync('/etc/letsencrypt/live/leadchatapp.com/privkey.pem', 'utf8');
+    const certificate = fs.readFileSync('/etc/letsencrypt/live/leadchatapp.com/cert.pem', 'utf8');
+    const ca = fs.readFileSync('/etc/letsencrypt/live/leadchatapp.com/chain.pem', 'utf8');
 
-        const requiredFiles = ['privkey.pem', 'cert.pem', 'chain.pem'];
-        for (const file of requiredFiles) {
-            console.log('Checking file:', file);
-            const filePath = path.join(sslPath, file);
-            console.log('Checking file:', filePath);
-            if (!sslFiles.includes(file)) {
-                throw new Error(`Required SSL file ${file} is missing`);
-            }
-            const stats = fs.statSync(filePath);
-            console.log(`File ${file} size:`, stats.size);
-            if (stats.size === 0) {
-                throw new Error(`SSL file ${file} is empty`);
-            }
-        }
+    const credentials = { key: privateKey, cert: certificate, ca: ca };
 
-        const privateKey = fs.readFileSync(path.join(sslPath, 'privkey.pem')).toString();
-        const certificate = fs.readFileSync(path.join(sslPath, 'cert.pem')).toString();
-        const ca = fs.readFileSync(path.join(sslPath, 'chain.pem')).toString();
-
-        const credentials = { key: privateKey, cert: certificate, ca: ca };
-
-        console.log('SSL files read successfully');
-        server = https.createServer(credentials, app);
-    } catch (error) {
-        console.error('Error reading SSL files:', error);
-        console.error('Error stack:', error.stack);
-        process.exit(1);
-    }
+    console.log(`privateKey ${privateKey}`)
+    console.log(`certificate ${certificate}`)
+    console.log(`ca ${ca}`)
+    console.log(`credentials ${credentials}`)
+    server = https.createServer(credentials, app);
 } else {
     server = http.createServer(app);
 }
@@ -76,19 +48,26 @@ let clientReady = false;
 
 async function initializeClient() {
     console.log('Starting new WhatsApp client initialization...');
-    const browser = await puppeteer.launch({
-        executablePath: '/usr/bin/chromium',
-        args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--no-zygote',
-            '--single-process',
-            '--disable-gpu'
-        ],
-        headless: 'new'
+
+    let browser;
+    if (process.env.NODE_ENV === 'production') {
+        browser = await puppeteer.launch({
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox'],
+            executablePath: '/usr/bin/chromium-browser'
+        });
+    } else {
+        browser = await puppeteer.launch({
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
+        });
+    }
+
+    client = new Client({
+        authStrategy: new LocalAuth(),
+        puppeteer: {
+            browser: browser
+        }
     });
 
     console.log('Puppeteer browser launched successfully');
