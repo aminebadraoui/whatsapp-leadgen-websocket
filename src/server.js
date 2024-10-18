@@ -13,9 +13,9 @@ const app = express();
 
 let server;
 if (process.env.NODE_ENV === 'production') {
-    const privateKey = fs.readFileSync('/app/ssl/privkey.pem', 'utf8');
-    const certificate = fs.readFileSync('/app/ssl/cert.pem', 'utf8');
-    const ca = fs.readFileSync('/app/ssl/chain.pem', 'utf8');
+    const privateKey = fs.readFileSync('../ssl/privkey.pem', 'utf8');
+    const certificate = fs.readFileSync('../ssl/cert.pem', 'utf8');
+    const ca = fs.readFileSync('../ssl/chain.pem', 'utf8');
 
     const credentials = { key: privateKey, cert: certificate, ca: ca };
 
