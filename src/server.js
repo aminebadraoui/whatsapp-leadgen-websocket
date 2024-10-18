@@ -8,6 +8,7 @@ const { PrismaClient } = require('@prisma/client');
 const fs = require('fs');
 const puppeteer = require('puppeteer');
 const prisma = new PrismaClient();
+const path = require('path');
 
 const app = express();
 
