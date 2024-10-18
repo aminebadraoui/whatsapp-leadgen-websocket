@@ -26,7 +26,9 @@ if (process.env.NODE_ENV === 'production') {
 
         const requiredFiles = ['privkey.pem', 'cert.pem', 'chain.pem'];
         for (const file of requiredFiles) {
+            console.log('Checking file:', file);
             const filePath = path.join(sslPath, file);
+            console.log('Checking file:', filePath);
             if (!sslFiles.includes(file)) {
                 throw new Error(`Required SSL file ${file} is missing`);
             }
