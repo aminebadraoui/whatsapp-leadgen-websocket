@@ -11,11 +11,20 @@ const prisma = new PrismaClient();
 
 const app = express();
 
+console.log('Current working directory:', process.cwd());
+console.log('Contents of current directory:', fs.readdirSync('.'));
+console.log('Contents of parent directory:', fs.readdirSync('..'));
+
 let server;
 if (process.env.NODE_ENV === 'production') {
-    const privateKey = fs.readFileSync('../ssl/privkey.pem', 'utf8');
-    const certificate = fs.readFileSync('../ssl/cert.pem', 'utf8');
-    const ca = fs.readFileSync('../ssl/chain.pem', 'utf8');
+
+    const sslPath = path.join(process.cwd(), 'ssl');
+    console.log('SSL directory path:', sslPath);
+    console.log('Contents of SSL directory:', fs.readdirSync(sslPath));
+
+    const privateKey = fs.readFileSync(path.join(sslPath, 'privkey.pem'), 'utf8');
+    const certificate = fs.readFileSync(path.join(sslPath, 'cert.pem'), 'utf8');
+    const ca = fs.readFileSync(path.join(sslPath, 'chain.pem'), 'utf8');
 
     const credentials = { key: privateKey, cert: certificate, ca: ca };
 
