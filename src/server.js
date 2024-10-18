@@ -13,9 +13,9 @@ const app = express();
 
 let server;
 if (process.env.NODE_ENV === 'production') {
-    const privateKey = fs.readFileSync('/etc/letsencrypt/live/leadchatapp.com/privkey.pem', 'utf8');
-    const certificate = fs.readFileSync('/etc/letsencrypt/live/leadchatapp.com/cert.pem', 'utf8');
-    const ca = fs.readFileSync('/etc/letsencrypt/live/leadchatapp.com/chain.pem', 'utf8');
+    const privateKey = fs.readFileSync('/app/ssl/privkey.pem', 'utf8');
+    const certificate = fs.readFileSync('/app/ssl/cert.pem', 'utf8');
+    const ca = fs.readFileSync('/app/ssl/chain.pem', 'utf8');
 
     const credentials = { key: privateKey, cert: certificate, ca: ca };
 

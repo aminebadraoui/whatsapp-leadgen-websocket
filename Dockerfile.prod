@@ -59,10 +59,19 @@ ENV NODE_ENV=production
 
 EXPOSE 5000
 
-# Create a non-root user and switch to it
+# Create a non-root user
 RUN adduser --disabled-password --gecos '' appuser
 
-COPY --chown=appuser:appuser /etc/letsencrypt /etc/letsencrypt
+# Create a directory for SSL certificates
+RUN mkdir -p /app/ssl
+
+# Copy SSL certificates
+COPY --chown=appuser:appuser /etc/letsencrypt/live/leadchatapp.com/privkey.pem /app/ssl/
+COPY --chown=appuser:appuser /etc/letsencrypt/live/leadchatapp.com/cert.pem /app/ssl/
+COPY --chown=appuser:appuser /etc/letsencrypt/live/leadchatapp.com/chain.pem /app/ssl/
+
+# Set proper permissions
+RUN chmod 644 /app/ssl/*
 
 USER appuser
 
