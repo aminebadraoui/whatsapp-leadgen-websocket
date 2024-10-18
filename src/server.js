@@ -163,7 +163,13 @@ async function getGroupMembers(groupId) {
     };
 }
 
+
 // REST API endpoints
+
+app.get('/api/', async (req, res) => {
+    res.json({ message: 'Welcome to the WhatsApp Lead Generation API' });
+});
+
 app.get('/api/buckets', async (req, res) => {
     try {
         const buckets = await prisma.bucket.findMany({
