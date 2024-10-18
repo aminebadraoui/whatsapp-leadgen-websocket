@@ -65,9 +65,6 @@ RUN adduser --disabled-password --gecos '' appuser
 # Create a directory for SSL certificates
 RUN mkdir -p /app/ssl && chown appuser:appuser /app/ssl
 
-# Set proper permissions
-RUN chmod 644 /app/ssl/*
-
 USER appuser
 
 CMD ["node", "src/server.js"]
