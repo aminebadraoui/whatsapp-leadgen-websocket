@@ -48,87 +48,75 @@ let clientReady = false;
 
 async function initializeClient() {
     console.log('Starting new WhatsApp client initialization...');
-
     let browser;
-    if (process.env.NODE_ENV === 'production') {
-        browser = await puppeteer.launch({
-            headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox'],
-            executablePath: '/usr/bin/chromium-browser'
-        });
-    } else {
-        browser = await puppeteer.launch({
-            headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
-        });
-    }
-
-    client = new Client({
-        authStrategy: new LocalAuth(),
-        puppeteer: {
-            browser: browser
-        }
-    });
-
-    console.log('Puppeteer browser launched successfully');
-
-    const page = await browser.newPage();
-    console.log('New page created');
-
-    await page.goto('https://web.whatsapp.com', { waitUntil: 'networkidle0' });
-    console.log('Navigated to WhatsApp Web');
-
-    const pageTitle = await page.title();
-    console.log('Page title:', pageTitle);
-
-    client = new Client({
-        authStrategy: new LocalAuth(),
-        puppeteer: {
-            browser: browser
-        }
-    });
-
-    client.on('qr', (qr) => {
-        console.log('QR RECEIVED', qr);
-        wss.clients.forEach((ws) => {
-            if (ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({ type: 'qr', qr }));
-            }
-        });
-    });
-
-    client.on('ready', () => {
-        console.log('WhatsApp client is ready!');
-        clientReady = true;
-        wss.clients.forEach((ws) => {
-            if (ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({ type: 'whatsapp_ready' }));
-            }
-        });
-    });
-
-    client.on('authenticated', () => {
-        console.log('WhatsApp client authenticated');
-        isAuthenticated = true;
-    });
-
-    client.on('auth_failure', (msg) => {
-        console.error('WhatsApp authentication failure:', msg);
-        isAuthenticated = false;
-    });
-
-    client.on('disconnected', (reason) => {
-        console.log('WhatsApp client was disconnected', reason);
-        clientReady = false;
-        setTimeout(initializeClient, 5000);
-    });
-
     try {
+        if (process.env.NODE_ENV === 'production') {
+            browser = await puppeteer.launch({
+                headless: true,
+                args: ['--no-sandbox', '--disable-setuid-sandbox'],
+                executablePath: '/usr/bin/chromium-browser'
+            });
+        } else {
+            browser = await puppeteer.launch({
+                headless: true,
+                args: ['--no-sandbox', '--disable-setuid-sandbox']
+            });
+        }
+
+        console.log('Puppeteer browser launched successfully');
+
+        client = new Client({
+            authStrategy: new LocalAuth(),
+            puppeteer: {
+                browser: browser
+            }
+        });
+
+        client.on('qr', (qr) => {
+            console.log('QR RECEIVED', qr);
+            wss.clients.forEach((ws) => {
+                if (ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ type: 'qr', qr }));
+                }
+            });
+        });
+
+        client.on('ready', () => {
+            console.log('WhatsApp client is ready!');
+            clientReady = true;
+            wss.clients.forEach((ws) => {
+                if (ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ type: 'whatsapp_ready' }));
+                }
+            });
+        });
+
+        client.on('authenticated', () => {
+            console.log('WhatsApp client authenticated');
+            isAuthenticated = true;
+        });
+
+        client.on('auth_failure', (msg) => {
+            console.error('WhatsApp authentication failure:', msg);
+            isAuthenticated = false;
+        });
+
+        client.on('disconnected', async (reason) => {
+            console.log('WhatsApp client was disconnected', reason);
+            clientReady = false;
+            isAuthenticated = false;
+            await browser.close();
+            setTimeout(initializeClient, 5000);
+        });
+
         console.log('Calling client.initialize()...');
         await client.initialize();
         console.log('WhatsApp client initialized');
     } catch (error) {
         console.error('Error initializing WhatsApp client:', error);
+        if (browser) {
+            await browser.close();
+        }
         setTimeout(initializeClient, 5000);
     }
 }
@@ -234,8 +222,16 @@ app.post('/api/export', async (req, res) => {
         // Add new contacts to the bucket
         const createdContacts = await prisma.$transaction(
             newContacts.map(contact =>
-                prisma.contact.create({
-                    data: {
+                prisma.contact.upsert({
+                    where: { whatsappId: contact.id },
+                    update: {
+                        name: contact.name,
+                        phoneNumber: contact.phoneNumber,
+                        groupId: contact.groupId,
+                        groupName: contact.groupName,
+                        bucketId: bucketId
+                    },
+                    create: {
                         whatsappId: contact.id,
                         name: contact.name,
                         phoneNumber: contact.phoneNumber,
@@ -254,7 +250,7 @@ app.post('/api/export', async (req, res) => {
         });
     } catch (error) {
         console.error('Error exporting contacts:', error);
-        res.status(500).json({ error: 'Error exporting contacts' });
+        res.status(500).json({ error: 'Error exporting contacts', details: error.message });
     }
 });
 
