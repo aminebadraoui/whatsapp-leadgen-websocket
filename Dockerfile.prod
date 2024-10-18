@@ -60,7 +60,8 @@ ENV NODE_ENV=production
 EXPOSE 5000
 
 # Create a non-root user
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN addgroup -g 1001 appgroup && \
+    adduser -D -u 1001 -G appgroup appuser
 
 # Set permissions for the SSL directory
 RUN mkdir -p /etc/letsencrypt && chown -R appuser:appgroup /etc/letsencrypt
