@@ -166,11 +166,13 @@ async function getGroupMembers(groupId) {
 
 // REST API endpoints
 
-app.get('/api/', async (req, res) => {
+
+app.get('/', async (req, res) => {
     res.json({ message: 'Welcome to the WhatsApp Lead Generation API' });
 });
 
 app.get('/api/buckets', async (req, res) => {
+    console.log('Fetching buckets');
     try {
         const buckets = await prisma.bucket.findMany({
             include: { _count: { select: { contacts: true } } }
@@ -455,3 +457,4 @@ function startServer() {
 }
 
 startServer();
+
