@@ -9,9 +9,9 @@ const fs = require('fs');
 const prisma = new PrismaClient();
 
 const app = express();
-const httpServer = http.createServer(app);
 
-let wsServer;
+
+let httpServer;
 if (process.env.NODE_ENV === 'production') {
     const privateKey = fs.readFileSync('/etc/letsencrypt/live/leadchatapp.com/privkey.pem', 'utf8');
     const certificate = fs.readFileSync('/etc/letsencrypt/live/leadchatapp.com/cert.pem', 'utf8');
@@ -23,12 +23,12 @@ if (process.env.NODE_ENV === 'production') {
     console.log(`certificate ${certificate}`)
     console.log(`ca ${ca}`)
     console.log(`credentials ${credentials}`)
-    wsServer = https.createServer(credentials, app);
+    httpServer = https.createServer(credentials, app);
 } else {
-    wsServer = http.createServer(app);
+    httpServer = http.createServer(app);
 }
 
-const wss = new WebSocket.Server({ server: wsServer });
+const wss = new WebSocket.Server({ server: httpServer });
 
 let client;
 let isAuthenticated = false;
@@ -369,6 +369,10 @@ app.get('/api/client-status', (req, res) => {
     });
 });
 
+wss.on('headers', (headers, req) => {
+    headers.push('Access-Control-Allow-Origin: *');
+});
+
 wss.on('connection', (ws) => {
     console.log('New WebSocket connection established');
 
@@ -426,16 +430,18 @@ function startServer() {
         console.log('Initializing WhatsApp client...');
         initializeClient();
 
-        const API_PORT = 5000;
-        const WS_PORT = 6000;
+        const PORT = process.env.PORT || 5000;
 
-        httpServer.listen(API_PORT, '0.0.0.0', () => {
-            console.log(`HTTP Server is running on port ${API_PORT}`);
+        httpServer.listen(PORT, () => {
+            const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+            const wsProtocol = process.env.NODE_ENV === 'production' ? 'wss' : 'ws';
+            const host = httpServer.address().address;
+            const runningPort = httpServer.address().port;
+
+            console.log(`HTTP server is running at ${protocol}://${host}:${runningPort}`);
+            console.log(`WebSocket server is available at ${wsProtocol}://${host}:${runningPort}`);
         });
 
-        wsServer.listen(WS_PORT, '0.0.0.0', () => {
-            console.log(`WebSocket Server is listening on ws://0.0.0.0:${WS_PORT}`);
-        });
     } catch (err) {
         console.error('Error starting server:', err);
         process.exit(1);
