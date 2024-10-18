@@ -54,7 +54,7 @@ async function initializeClient() {
             browser = await puppeteer.launch({
                 headless: true,
                 args: ['--no-sandbox', '--disable-setuid-sandbox'],
-                executablePath: '/usr/bin/chromium-browser'
+                executablePath: '/usr/bin/chromium'
             });
         } else {
             browser = await puppeteer.launch({
