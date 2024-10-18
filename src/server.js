@@ -438,7 +438,7 @@ function startServer() {
 
         const PORT = process.env.PORT || 5000;
 
-        httpServer.listen(PORT, () => {
+        httpServer.listen(PORT, '0.0.0.0', () => {
             const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
             const wsProtocol = process.env.NODE_ENV === 'production' ? 'wss' : 'ws';
             const host = httpServer.address().address;
