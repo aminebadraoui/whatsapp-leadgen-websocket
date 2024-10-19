@@ -42,19 +42,15 @@ RUN mkdir -p /app/.wwebjs_auth && chown -R node:node /app/.wwebjs_auth
 
 COPY --from=build /app .
 COPY src ./src 
-COPY prisma ./prisma 
-RUN npx prisma generate 
+
 
 # Declare build arguments
-ARG DATABASE_URL
-ARG JWT_SECRET
+
 ARG NODE_ENV
 
 # Set environment variables from build arguments
-ENV DATABASE_URL=$DATABASE_URL
-ENV JWT_SECRET=$JWT_SECRET
 ENV NODE_ENV=production
 
-EXPOSE 6000
+EXPOSE 7000
 
 CMD ["node", "src/server.js"]

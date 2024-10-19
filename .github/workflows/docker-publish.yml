@@ -22,10 +22,8 @@ jobs:
         context: .
         file: ./Dockerfile.prod
         push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/whatsapp-leadgen-server:prod
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/whatsapp-leadgen-websocket:prod
         build-args: |
-          DATABASE_URL=${{ secrets.DATABASE_URL }}
-          JWT_SECRET=${{ secrets.JWT_SECRET }}
           NODE_ENV=production
 
     - name: Build and push development Docker image
@@ -34,4 +32,4 @@ jobs:
         context: .
         file: ./Dockerfile.dev
         push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/whatsapp-leadgen-server:dev
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/whatsapp-leadgen-websocket:dev
