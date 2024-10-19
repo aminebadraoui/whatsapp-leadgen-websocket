@@ -51,6 +51,6 @@ ARG NODE_ENV
 # Set environment variables from build arguments
 ENV NODE_ENV=production
 
-EXPOSE 8080
+EXPOSE 3001
 
 CMD ["node", "src/server.js"]
