@@ -61,6 +61,33 @@ async function initializeClient() {
     }
 }
 
+async function getGroups() {
+    if (!client || !clientReady) {
+        throw new Error('WhatsApp client is not ready');
+    }
+    const chats = await client.getChats();
+    return chats.filter(chat => chat.isGroup).map(group => ({
+        id: group.id._serialized,
+        name: group.name
+    }));
+}
+
+async function getGroupMembers(groupId) {
+    if (!client || !clientReady) {
+        throw new Error('WhatsApp client is not ready');
+    }
+    const chat = await client.getChatById(groupId);
+    if (!chat.isGroup) {
+        throw new Error('Specified chat is not a group');
+    }
+    const participants = await chat.participants;
+    return participants.map(participant => ({
+        id: participant.id._serialized,
+        name: participant.name || '',
+        phoneNumber: participant.id.user
+    }));
+}
+
 wss.on('connection', (ws) => {
     console.log('New WebSocket connection established');
 
@@ -72,15 +99,17 @@ wss.on('connection', (ws) => {
         const data = JSON.parse(message);
         console.log('Received message:', data);
 
-        // Handle different message types here
-        // For example:
-        if (data.action === 'getGroups') {
-            const groups = await client.getGroups();
-            ws.send(JSON.stringify({ type: 'groups', groups }));
-        }
-        if (data.action === 'getGroupMembers') {
-            const groupMembers = await client.getGroupMembers(data.groupId);
-            ws.send(JSON.stringify({ type: 'groupMembers', groupMembers }));
+        try {
+            if (data.action === 'getGroups') {
+                const groups = await getGroups();
+                ws.send(JSON.stringify({ action: 'groupsReceived', groups }));
+            } else if (data.action === 'getGroupMembers') {
+                const groupMembers = await getGroupMembers(data.groupId);
+                ws.send(JSON.stringify({ action: 'groupMembersReceived', groupMembers }));
+            }
+        } catch (error) {
+            console.error('Error processing WebSocket message:', error);
+            ws.send(JSON.stringify({ action: 'error', message: error.message }));
         }
     });
 });
