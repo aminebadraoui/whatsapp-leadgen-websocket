@@ -116,9 +116,47 @@ wss.on('connection', (ws) => {
             if (data.action === 'getGroups') {
                 const groups = await getGroups();
                 ws.send(JSON.stringify({ action: 'groupsReceived', groups }));
-            } else if (data.action === 'getGroupMembers') {
+            }
+
+            else if (data.action === 'getGroupMembers') {
                 const groupMembers = await getGroupMembers(data.groupId);
                 ws.send(JSON.stringify({ action: 'groupMembersReceived', members: groupMembers.members, totalMembers: groupMembers.totalMembers }));
+            }
+
+            else if (data.action === 'sendMessage') {
+                if (!clientReady) {
+                    ws.send(JSON.stringify({
+                        action: 'error',
+                        contactId: data.contactId,
+                        message: 'WhatsApp client is not ready'
+                    }));
+                    return;
+                }
+
+                const chatId = data.phoneNumber.includes('@c.us')
+                    ? data.phoneNumber
+                    : `${data.phoneNumber.replace(/[^\d]/g, '')}@c.us`;
+
+                console.log('Sending message to:', chatId);
+                console.log('Message content:', data.message);
+
+                try {
+                    const sentMessage = await client.sendMessage(chatId, data.message);
+                    console.log('Message sent, response:', sentMessage);
+
+                    ws.send(JSON.stringify({
+                        action: 'messageSent',
+                        contactId: data.contactId,
+                        messageId: sentMessage.id._serialized
+                    }));
+                } catch (error) {
+                    console.error('Error sending message:', error);
+                    ws.send(JSON.stringify({
+                        action: 'error',
+                        contactId: data.contactId,
+                        message: error.message
+                    }));
+                }
             }
         } catch (error) {
             console.error('Error processing WebSocket message:', error);
