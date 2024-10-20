@@ -75,10 +75,12 @@ wss.on('connection', (ws) => {
         // Handle different message types here
         // For example:
         if (data.action === 'getGroups') {
-            // Implement getGroups functionality
+            const groups = await client.getGroups();
+            ws.send(JSON.stringify({ type: 'groups', groups }));
         }
         if (data.action === 'getGroupMembers') {
-            // Implement getGroupMembers functionality
+            const groupMembers = await client.getGroupMembers(data.groupId);
+            ws.send(JSON.stringify({ type: 'groupMembers', groupMembers }));
         }
     });
 });
