@@ -92,6 +92,9 @@ async function getGroupMembers(groupId) {
         };
     }));
 
+    console.log("members", members);
+    console.log("totalMembers", members.length);
+
     return {
         members: members,
         totalMembers: members.length
@@ -115,7 +118,7 @@ wss.on('connection', (ws) => {
                 ws.send(JSON.stringify({ action: 'groupsReceived', groups }));
             } else if (data.action === 'getGroupMembers') {
                 const groupMembers = await getGroupMembers(data.groupId);
-                ws.send(JSON.stringify({ action: 'groupMembersReceived', groupMembers }));
+                ws.send(JSON.stringify({ action: 'groupMembersReceived', members: groupMembers.members, totalMembers: groupMembers.totalMembers }));
             }
         } catch (error) {
             console.error('Error processing WebSocket message:', error);
