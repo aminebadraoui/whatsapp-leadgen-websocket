@@ -73,19 +73,29 @@ async function getGroups() {
 }
 
 async function getGroupMembers(groupId) {
-    if (!client || !clientReady) {
-        throw new Error('WhatsApp client is not ready');
+    if (!client || !client.pupPage) {
+        throw new Error('Client not ready');
     }
+
     const chat = await client.getChatById(groupId);
     if (!chat.isGroup) {
-        throw new Error('Specified chat is not a group');
+        throw new Error('Not a group chat');
     }
+
     const participants = await chat.participants;
-    return participants.map(participant => ({
-        id: participant.id._serialized,
-        name: participant.name || '',
-        phoneNumber: participant.id.user
+    const members = await Promise.all(participants.map(async (participant) => {
+        const contact = await client.getContactById(participant.id._serialized);
+        return {
+            id: contact.id._serialized,
+            name: contact.name || contact.pushname || 'Unknown',
+            phoneNumber: contact.number
+        };
     }));
+
+    return {
+        members: members,
+        totalMembers: members.length
+    };
 }
 
 wss.on('connection', (ws) => {
