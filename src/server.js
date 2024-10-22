@@ -3,6 +3,9 @@ const http = require('http');
 const WebSocket = require('ws');
 const { Client, LocalAuth, RemoteAuth } = require('whatsapp-web.js');
 const cors = require('cors');
+const axios = require('axios');
+const fs = require('fs');
+
 
 const app = express();
 const server = http.createServer(app);
