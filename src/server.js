@@ -66,17 +66,23 @@ class CustomStore {
 
     async save({ session }) {
         try {
-            // We don't need to read from the file system here
-            // Instead, we'll send the session data directly
-            await axios.post(`${this.apiUrl}/whatsapp-auth/save`, {
+            console.log('Attempting to save session:', this.sessionName);
+            const response = await axios.post(`${this.apiUrl}/whatsapp-auth/save`, {
                 userId: this.userId,
                 session: this.sessionName,
-                data: session // This should be the session data provided by whatsapp-web.js
+                data: session
             });
-
+            console.log('Session save response:', response.data);
+            if (response.status !== 200) {
+                throw new Error(`Unexpected status code: ${response.status}`);
+            }
             console.log('Session saved successfully');
         } catch (error) {
-            console.error('Error saving session:', error);
+            console.error('Error saving session:', error.message);
+            if (error.response) {
+                console.error('Response data:', error.response.data);
+                console.error('Response status:', error.response.status);
+            }
             throw error; // Propagate the error to be handled by the caller
         }
     }
@@ -112,11 +118,16 @@ async function initializeClient(userId) {
             console.log('WhatsApp client is ready!');
             clientReady = true;
             isAuthenticated = true;
-            wss.clients.forEach((ws) => {
-                ws.send(JSON.stringify({ type: 'whatsapp_ready' }));
-
-                store.save({ session: client.session });
-            });
+            try {
+                await store.save({ session: client.session });
+                console.log('Session saved successfully after client ready');
+                wss.clients.forEach((ws) => {
+                    ws.send(JSON.stringify({ type: 'whatsapp_ready' }));
+                });
+            } catch (error) {
+                console.error('Failed to save session after client ready:', error.message);
+                // Consider what action to take if saving fails - maybe retry?
+            }
         });
 
         client.on('disconnected', () => {
