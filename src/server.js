@@ -115,7 +115,7 @@ async function initializeClient(userId) {
             wss.clients.forEach((ws) => {
                 ws.send(JSON.stringify({ type: 'whatsapp_ready' }));
 
-                store.save({ session: `leadchat-whatsapp-client-${userId}` });
+                store.save({ session: client.session });
             });
         });
 
