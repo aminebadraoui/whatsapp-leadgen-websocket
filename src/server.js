@@ -26,11 +26,12 @@ class CustomStore {
     constructor(apiUrl, userId) {
         this.apiUrl = apiUrl;
         this.userId = userId;
+        this.sessionName = `leadchat-whatsapp-client-${userId}`;
     }
 
-    async sessionExists({ session, userId }) {
+    async sessionExists({ session }) {
         try {
-            const response = await axios.get(`${this.apiUrl}/whatsapp-auth/${this.userId}/${session}`);
+            const response = await axios.post(`${this.apiUrl}/whatsapp-auth/session-exists`, { session: this.sessionName, userId: this.userId });
             return response.data.exists;
         } catch (error) {
             console.error('Error checking session existence:', error);
@@ -40,7 +41,7 @@ class CustomStore {
 
     async save({ session }) {
         try {
-            await axios.post(`${this.apiUrl}/whatsapp-auth/${this.userId}/${session}`, { data: fs.readFileSync(`${session}.zip`) });
+            await axios.post(`${this.apiUrl}/whatsapp-auth/${this.userId}/${this.sessionName}`, { data: fs.readFileSync(`${session}.zip`) });
         } catch (error) {
             console.error('Error saving session:', error);
         }
@@ -48,7 +49,7 @@ class CustomStore {
 
     async extract({ session, path }) {
         try {
-            const response = await axios.get(`${this.apiUrl}/whatsapp-auth/${this.userId}/${session}`, { responseType: 'arraybuffer' });
+            const response = await axios.get(`${this.apiUrl}/whatsapp-auth/${this.userId}/${this.sessionName}`, { responseType: 'arraybuffer' });
             fs.writeFileSync(path, response.data);
         } catch (error) {
             console.error('Error extracting session:', error);
@@ -57,7 +58,7 @@ class CustomStore {
 
     async delete({ session }) {
         try {
-            await axios.delete(`${this.apiUrl}/whatsapp-auth/${this.userId}/${session}`);
+            await axios.delete(`${this.apiUrl}/whatsapp-auth/${this.userId}/${this.sessionName}`);
         } catch (error) {
             console.error('Error deleting session:', error);
         }
@@ -65,7 +66,7 @@ class CustomStore {
 
     async verifySession({ session }) {
         try {
-            const response = await axios.post(`${this.apiUrl}/whatsapp-auth/verify`, { session, userId: this.userId });
+            const response = await axios.post(`${this.apiUrl}/whatsapp-auth/verify`, { session: this.sessionName, userId: this.userId });
             return response.data.isValid;
         } catch (error) {
             console.error('Error verifying session:', error);
@@ -84,7 +85,7 @@ async function initializeClient(userId) {
             authStrategy: new RemoteAuth({
                 store: store,
                 clientId: `leadchat-whatsapp-client-${userId}`,
-                dataPath: `whatsapp-sessions/${userId}_leadchat-whatsapp-client.zip`,
+                dataPath: `leadchat-whatsapp-client-${userId}`,
                 backupSyncIntervalMs: 300000, // 5 minutes
             }),
             puppeteer: {
@@ -102,7 +103,7 @@ async function initializeClient(userId) {
 
         client.on('ready', async () => {
             console.log('WhatsApp client is ready!');
-            const isValid = await store.verifySession({ session: `leadchat-whatsapp-client-${userId}`, userId });
+            const isValid = await store.verifySession({ session: `leadchat-whatsapp-client-${userId}` });
             if (isValid) {
                 clientReady = true;
                 isAuthenticated = true;
