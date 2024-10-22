@@ -64,13 +64,20 @@ class CustomStore {
         }
     }
 
-    async verifySession({ session }) {
+    async save({ session }) {
         try {
-            const response = await axios.post(`${this.apiUrl}/whatsapp-auth/verify`, { session: this.sessionName, userId: this.userId });
-            return response.data.isValid;
+            // We don't need to read from the file system here
+            // Instead, we'll send the session data directly
+            await axios.post(`${this.apiUrl}/whatsapp-auth/save`, {
+                userId: this.userId,
+                session: this.sessionName,
+                data: session // This should be the session data provided by whatsapp-web.js
+            });
+
+            console.log('Session saved successfully');
         } catch (error) {
-            console.error('Error verifying session:', error);
-            return false;
+            console.error('Error saving session:', error);
+            throw error; // Propagate the error to be handled by the caller
         }
     }
 }
