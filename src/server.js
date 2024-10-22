@@ -86,7 +86,6 @@ async function initializeClient(userId) {
                 clientId: `leadchat-whatsapp-client-${userId}`,
                 dataPath: `whatsapp-sessions/${userId}_leadchat-whatsapp-client.zip`,
                 backupSyncIntervalMs: 300000, // 5 minutes
-                userId: userId,
             }),
             puppeteer: {
                 headless: true,
