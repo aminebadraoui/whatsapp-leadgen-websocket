@@ -24,9 +24,9 @@ class CustomStore {
         this.apiUrl = apiUrl;
     }
 
-    async sessionExists({ session }) {
+    async sessionExists({ session, userId }) {
         try {
-            const response = await axios.get(`${this.apiUrl}/whatsapp-auth/${session}`);
+            const response = await axios.get(`${this.apiUrl}/whatsapp-auth/${userId}/${session}`);
             return response.data.exists;
         } catch (error) {
             console.error('Error checking session existence:', error);
@@ -34,34 +34,44 @@ class CustomStore {
         }
     }
 
-    async save({ session }) {
+    async save({ session, userId }) {
         try {
-            await axios.post(`${this.apiUrl}/whatsapp-auth/${session}`, { data: fs.readFileSync(`${session}.zip`) });
+            await axios.post(`${this.apiUrl}/whatsapp-auth/${userId}/${session}`, { data: fs.readFileSync(`${session}.zip`) });
         } catch (error) {
             console.error('Error saving session:', error);
         }
     }
 
-    async extract({ session, path }) {
+    async extract({ session, userId, path }) {
         try {
-            const response = await axios.get(`${this.apiUrl}/whatsapp-auth/${session}`, { responseType: 'arraybuffer' });
+            const response = await axios.get(`${this.apiUrl}/whatsapp-auth/${userId}/${session}`, { responseType: 'arraybuffer' });
             fs.writeFileSync(path, response.data);
         } catch (error) {
             console.error('Error extracting session:', error);
         }
     }
 
-    async delete({ session }) {
+    async delete({ session, userId }) {
         try {
-            await axios.delete(`${this.apiUrl}/whatsapp-auth/${session}`);
+            await axios.delete(`${this.apiUrl}/whatsapp-auth/${userId}/${session}`);
         } catch (error) {
             console.error('Error deleting session:', error);
+        }
+    }
+
+    async verifySession({ session, userId }) {
+        try {
+            const response = await axios.post(`${this.apiUrl}/whatsapp-auth/verify`, { session, userId });
+            return response.data.isValid;
+        } catch (error) {
+            console.error('Error verifying session:', error);
+            return false;
         }
     }
 }
 
 // Initialize WhatsApp client
-async function initializeClient() {
+async function initializeClient(userId) {
     console.log('Starting WhatsApp client initialization...');
     try {
         const store = new CustomStore(process.env.API_URL || 'http://localhost:5000/api');
@@ -69,8 +79,8 @@ async function initializeClient() {
         client = new Client({
             authStrategy: new RemoteAuth({
                 store: store,
-                clientId: 'leadchat-whatsapp-client',
-                dataPath: './whatsapp-session',
+                clientId: `leadchat-whatsapp-client-${userId}`,
+                dataPath: `whatsapp-sessions/${userId}_leadchat-whatsapp-client.zip`,
                 backupSyncIntervalMs: 300000 // 5 minutes
             }),
             puppeteer: {
@@ -86,13 +96,20 @@ async function initializeClient() {
             });
         });
 
-        client.on('ready', () => {
+        client.on('ready', async () => {
             console.log('WhatsApp client is ready!');
-            clientReady = true;
-            isAuthenticated = true;
-            wss.clients.forEach((ws) => {
-                ws.send(JSON.stringify({ type: 'whatsapp_ready' }));
-            });
+            const isValid = await store.verifySession({ session: `leadchat-whatsapp-client-${userId}`, userId });
+            if (isValid) {
+                clientReady = true;
+                isAuthenticated = true;
+                wss.clients.forEach((ws) => {
+                    ws.send(JSON.stringify({ type: 'whatsapp_ready' }));
+                });
+            } else {
+                console.log('Invalid session for this user');
+                await client.logout();
+                setTimeout(() => initializeClient(userId), 5000);
+            }
         });
 
         client.on('disconnected', () => {
@@ -164,6 +181,14 @@ wss.on('connection', (ws) => {
         console.log('Received message:', data);
 
         try {
+            if (data.action === 'initialize' && data.userId) {
+                userId = data.userId;
+                await initializeClient(userId);
+            } else if (!userId) {
+                ws.send(JSON.stringify({ action: 'error', message: 'User ID not provided' }));
+                return;
+            }
+
             if (data.action === 'getGroups') {
                 const groups = await getGroups();
                 ws.send(JSON.stringify({ action: 'groupsReceived', groups }));
@@ -221,5 +246,4 @@ const PORT = process.env.PORT || 3001;
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on http://0.0.0.0:${PORT}`);
     console.log(`WebSocket server available at ws://0.0.0.0:${PORT}`);
-    initializeClient();
 });
