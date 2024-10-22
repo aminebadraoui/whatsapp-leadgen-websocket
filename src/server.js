@@ -110,18 +110,13 @@ async function initializeClient(userId) {
 
         client.on('ready', async () => {
             console.log('WhatsApp client is ready!');
-            const isValid = await store.verifySession({ session: `leadchat-whatsapp-client-${userId}` });
-            if (isValid) {
-                clientReady = true;
-                isAuthenticated = true;
-                wss.clients.forEach((ws) => {
-                    ws.send(JSON.stringify({ type: 'whatsapp_ready' }));
-                });
-            } else {
-                console.log('Invalid session for this user');
-                await client.logout();
-                setTimeout(() => initializeClient(userId), 5000);
-            }
+            clientReady = true;
+            isAuthenticated = true;
+            wss.clients.forEach((ws) => {
+                ws.send(JSON.stringify({ type: 'whatsapp_ready' }));
+
+                store.save({ session: `leadchat-whatsapp-client-${userId}` });
+            });
         });
 
         client.on('disconnected', () => {
