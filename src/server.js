@@ -1,7 +1,7 @@
 const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
-const { Client, LocalAuth } = require('whatsapp-web.js');
+const { Client, LocalAuth, RemoteAuth } = require('whatsapp-web.js');
 const cors = require('cors');
 
 const app = express();
@@ -19,12 +19,60 @@ let client;
 let isAuthenticated = false;
 let clientReady = false;
 
+class CustomStore {
+    constructor(apiUrl) {
+        this.apiUrl = apiUrl;
+    }
+
+    async sessionExists({ session }) {
+        try {
+            const response = await axios.get(`${this.apiUrl}/whatsapp-auth/${session}`);
+            return response.data.exists;
+        } catch (error) {
+            console.error('Error checking session existence:', error);
+            return false;
+        }
+    }
+
+    async save({ session }) {
+        try {
+            await axios.post(`${this.apiUrl}/whatsapp-auth/${session}`, { data: fs.readFileSync(`${session}.zip`) });
+        } catch (error) {
+            console.error('Error saving session:', error);
+        }
+    }
+
+    async extract({ session, path }) {
+        try {
+            const response = await axios.get(`${this.apiUrl}/whatsapp-auth/${session}`, { responseType: 'arraybuffer' });
+            fs.writeFileSync(path, response.data);
+        } catch (error) {
+            console.error('Error extracting session:', error);
+        }
+    }
+
+    async delete({ session }) {
+        try {
+            await axios.delete(`${this.apiUrl}/whatsapp-auth/${session}`);
+        } catch (error) {
+            console.error('Error deleting session:', error);
+        }
+    }
+}
+
 // Initialize WhatsApp client
 async function initializeClient() {
     console.log('Starting WhatsApp client initialization...');
     try {
+        const store = new CustomStore(process.env.API_URL || 'http://localhost:5000/api');
+
         client = new Client({
-            authStrategy: new LocalAuth(),
+            authStrategy: new RemoteAuth({
+                store: store,
+                clientId: 'leadchat-whatsapp-client',
+                dataPath: './whatsapp-session',
+                backupSyncIntervalMs: 300000 // 5 minutes
+            }),
             puppeteer: {
                 headless: true,
                 args: ['--no-sandbox', '--disable-setuid-sandbox'],
@@ -106,6 +154,9 @@ wss.on('connection', (ws) => {
 
     if (isAuthenticated && clientReady) {
         ws.send(JSON.stringify({ type: 'whatsapp_ready', authenticated: true }));
+    } else {
+        ws.send(JSON.stringify({ type: 'whatsapp_not_ready', authenticated: false }));
+        console.log('WhatsApp client is not ready');
     }
 
     ws.on('message', async (message) => {

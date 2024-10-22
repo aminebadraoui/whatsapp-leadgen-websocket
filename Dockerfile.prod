@@ -47,9 +47,11 @@ COPY src ./src
 # Declare build arguments
 
 ARG NODE_ENV
+ARG API_URL
 
 # Set environment variables from build arguments
 ENV NODE_ENV=production
+ENV API_URL=$API_URL
 
 EXPOSE 3001
 
