@@ -26,9 +26,11 @@ let clientReady = false;
 async function initializeClient(userId) {
     console.log('Starting WhatsApp client initialization...');
     try {
-
         client = new Client({
-            authStrategy: new LocalAuth(),
+            authStrategy: new LocalAuth({
+                clientId: `client-${userId}`,
+                dataPath: '/app/.wwebjs_auth'
+            }),
             puppeteer: {
                 headless: true,
                 args: ['--no-sandbox', '--disable-setuid-sandbox'],
@@ -47,13 +49,9 @@ async function initializeClient(userId) {
             console.log('WhatsApp client is ready!');
             clientReady = true;
             isAuthenticated = true;
-            try {
-                wss.clients.forEach((ws) => {
-                    ws.send(JSON.stringify({ type: 'whatsapp_ready' }));
-                });
-            } catch (error) {
-                console.error('Failed to save session after client ready:', error.message);
-            }
+            wss.clients.forEach((ws) => {
+                ws.send(JSON.stringify({ type: 'whatsapp_ready' }));
+            });
         });
 
         client.on('disconnected', () => {
@@ -66,7 +64,25 @@ async function initializeClient(userId) {
         await client.initialize();
     } catch (error) {
         console.error('Error initializing WhatsApp client:', error);
-        setTimeout(() => initializeClient(userId), 5000);
+        if (error.message.includes('ENOTEMPTY: directory not empty')) {
+            console.log('Attempting to clean up the session directory...');
+            try {
+                const rimraf = require('rimraf');
+                await new Promise((resolve, reject) => {
+                    rimraf('/app/.wwebjs_auth/session', (err) => {
+                        if (err) reject(err);
+                        else resolve();
+                    });
+                });
+                console.log('Session directory cleaned up. Retrying initialization...');
+                setTimeout(() => initializeClient(userId), 1000);
+            } catch (cleanupError) {
+                console.error('Failed to clean up session directory:', cleanupError);
+                setTimeout(() => initializeClient(userId), 5000);
+            }
+        } else {
+            setTimeout(() => initializeClient(userId), 5000);
+        }
     }
 }
 
