@@ -159,9 +159,10 @@ wss.on('connection', (ws) => {
         try {
             if (data.action === 'checkClientStatus') {
                 ws.send(JSON.stringify({ action: 'clientStatus', isReady: clientReady }));
+                return;
             }
 
-            if (data.action === 'initialize' && data.userId) {
+            else if (data.action === 'initialize' && data.userId) {
                 userId = data.userId;
                 await initializeClient(userId);
             } else if (!userId) {
