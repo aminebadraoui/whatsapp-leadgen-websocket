@@ -20,8 +20,10 @@ let isAuthenticated = false;
 let clientReady = false;
 
 // Initialize WhatsApp client
+let initializationInProgress = false;
 async function initializeClient(userId) {
     console.log('Starting WhatsApp client initialization...');
+    initializationInProgress = true;
     try {
         client = new Client({
             authStrategy: new LocalAuth({
@@ -59,6 +61,7 @@ async function initializeClient(userId) {
         });
 
         await client.initialize();
+        initializationInProgress = false;
     } catch (error) {
         console.error('Error initializing WhatsApp client:', error);
         if (error.message.includes('ENOTEMPTY: directory not empty')) {
@@ -80,6 +83,15 @@ async function initializeClient(userId) {
         } else {
             setTimeout(() => initializeClient(userId), 5000);
         }
+
+        console.error('Error initializing WhatsApp client:', error);
+        initializationInProgress = false;
+        clientReady = false;
+        isAuthenticated = false;
+        // Notify clients about the error
+        wss.clients.forEach((ws) => {
+            ws.send(JSON.stringify({ type: 'whatsapp_not_ready', error: error.message }));
+        });
     }
 }
 
