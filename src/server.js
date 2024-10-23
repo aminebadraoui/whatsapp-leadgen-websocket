@@ -66,11 +66,14 @@ class CustomStore {
 
     async save({ session }) {
         try {
+            console.log("session", session);
             console.log('Attempting to save session:', this.sessionName);
+            const sessionData = JSON.stringify(session);
+            console.log('Session data to be saved:', sessionData);
             const response = await axios.post(`${this.apiUrl}/whatsapp-auth/save`, {
                 userId: this.userId,
                 session: this.sessionName,
-                data: JSON.stringify(session)
+                data: sessionData
             });
             console.log('Session save response:', response.data);
             if (response.status !== 200) {
@@ -83,6 +86,7 @@ class CustomStore {
                 console.error('Response data:', error.response.data);
                 console.error('Response status:', error.response.status);
             }
+            throw error; // Propagate the error
         }
     }
 }
@@ -143,14 +147,17 @@ async function initializeClient(userId) {
 }
 
 async function getGroups() {
-    if (!client || !clientReady || typeof client.getChats !== 'function') {
-        throw new Error('WhatsApp client is not ready or getChats method is not available');
+    if (!client || !clientReady) {
+        throw new Error('WhatsApp client is not ready');
     }
     try {
         console.log('Getting chats');
         console.log("client", client);
         console.log("client.getChats", client.getChats);
-        // Remove the waitForConnection call
+
+        // Wait for the client to be fully ready
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
         const chats = await client.getChats();
         return chats.filter(chat => chat.isGroup).map(group => ({
             id: group.id._serialized,
