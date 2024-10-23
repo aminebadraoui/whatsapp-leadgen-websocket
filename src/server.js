@@ -83,7 +83,6 @@ class CustomStore {
                 console.error('Response data:', error.response.data);
                 console.error('Response status:', error.response.status);
             }
-            throw error; // Propagate the error to be handled by the caller
         }
     }
 }
