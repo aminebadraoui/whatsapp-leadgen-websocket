@@ -70,7 +70,7 @@ class CustomStore {
             const response = await axios.post(`${this.apiUrl}/whatsapp-auth/save`, {
                 userId: this.userId,
                 session: this.sessionName,
-                data: session
+                data: JSON.stringify(session)
             });
             console.log('Session save response:', response.data);
             if (response.status !== 200) {
@@ -147,11 +147,16 @@ async function getGroups() {
     if (!client || !clientReady) {
         throw new Error('WhatsApp client is not ready');
     }
-    const chats = await client.getChats();
-    return chats.filter(chat => chat.isGroup).map(group => ({
-        id: group.id._serialized,
-        name: group.name
-    }));
+    try {
+        const chats = await client.getChats();
+        return chats.filter(chat => chat.isGroup).map(group => ({
+            id: group.id._serialized,
+            name: group.name
+        }));
+    } catch (error) {
+        console.error('Error getting chats:', error);
+        throw new Error('Failed to get chats');
+    }
 }
 
 async function getGroupMembers(groupId) {
@@ -203,6 +208,11 @@ wss.on('connection', (ws) => {
                 await initializeClient(userId);
             } else if (!userId) {
                 ws.send(JSON.stringify({ action: 'error', message: 'User ID not provided' }));
+                return;
+            }
+
+            if (!clientReady) {
+                ws.send(JSON.stringify({ action: 'error', message: 'WhatsApp client is not ready' }));
                 return;
             }
 
