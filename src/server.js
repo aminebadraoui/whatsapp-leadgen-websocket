@@ -29,8 +29,7 @@ async function initializeClient(userId) {
 
         client = new Client({
             authStrategy: new LocalAuth({
-                clientId: `leadchat-whatsapp-client-${userId}`,
-                dataPath: `./whatsapp-sessions/${userId}`
+                clientId: `leadchat-whatsapp-client-${userId}`
             }),
             puppeteer: {
                 headless: true,
@@ -80,9 +79,6 @@ async function getGroups() {
         console.log('Getting chats');
         console.log("client", client);
         console.log("client.getChats", client.getChats);
-
-        // Wait for the client to be fully ready
-        await new Promise(resolve => setTimeout(resolve, 1000));
 
         const chats = await client.getChats();
         return chats.filter(chat => chat.isGroup).map(group => ({
