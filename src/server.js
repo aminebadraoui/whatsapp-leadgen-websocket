@@ -143,12 +143,14 @@ async function initializeClient(userId) {
 }
 
 async function getGroups() {
-    if (!client || !clientReady) {
-        throw new Error('WhatsApp client is not ready');
+    if (!client || !clientReady || typeof client.getChats !== 'function') {
+        throw new Error('WhatsApp client is not ready or getChats method is not available');
     }
     try {
         console.log('Getting chats');
-        await client.waitForConnection();
+        console.log("client", client);
+        console.log("client.getChats", client.getChats);
+        // Remove the waitForConnection call
         const chats = await client.getChats();
         return chats.filter(chat => chat.isGroup).map(group => ({
             id: group.id._serialized,
