@@ -38,7 +38,6 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
 
 # Create a directory for WhatsApp session data and set permissions
 RUN mkdir -p /app/.wwebjs_auth && chown -R node:node /app/.wwebjs_auth
-USER node
 
 COPY --from=build /app .
 COPY src ./src 
