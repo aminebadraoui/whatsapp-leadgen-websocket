@@ -22,87 +22,15 @@ let client;
 let isAuthenticated = false;
 let clientReady = false;
 
-class CustomStore {
-    constructor(apiUrl, userId) {
-        this.apiUrl = apiUrl;
-        this.userId = userId;
-        this.sessionName = `leadchat-whatsapp-client-${userId}`;
-    }
-
-    async sessionExists({ session }) {
-        try {
-            const response = await axios.post(`${this.apiUrl}/whatsapp-auth/session-exists`, { session: this.sessionName, userId: this.userId });
-            return response.data.exists;
-        } catch (error) {
-            console.error('Error checking session existence:', error);
-            return false;
-        }
-    }
-
-    async save({ session }) {
-        try {
-            await axios.post(`${this.apiUrl}/whatsapp-auth/${this.userId}/${this.sessionName}`, { data: fs.readFileSync(`${session}.zip`) });
-        } catch (error) {
-            console.error('Error saving session:', error);
-        }
-    }
-
-    async extract({ session, path }) {
-        try {
-            const response = await axios.get(`${this.apiUrl}/whatsapp-auth/${this.userId}/${this.sessionName}`, { responseType: 'arraybuffer' });
-            fs.writeFileSync(path, response.data);
-        } catch (error) {
-            console.error('Error extracting session:', error);
-        }
-    }
-
-    async delete({ session }) {
-        try {
-            await axios.delete(`${this.apiUrl}/whatsapp-auth/${this.userId}/${this.sessionName}`);
-        } catch (error) {
-            console.error('Error deleting session:', error);
-        }
-    }
-
-    async save({ session }) {
-        try {
-            console.log("session", session);
-            console.log('Attempting to save session:', this.sessionName);
-            const sessionData = JSON.stringify(session);
-            console.log('Session data to be saved:', sessionData);
-            const response = await axios.post(`${this.apiUrl}/whatsapp-auth/save`, {
-                userId: this.userId,
-                session: this.sessionName,
-                data: sessionData
-            });
-            console.log('Session save response:', response.data);
-            if (response.status !== 200) {
-                throw new Error(`Unexpected status code: ${response.status}`);
-            }
-            console.log('Session saved successfully');
-        } catch (error) {
-            console.error('Error saving session:', error.message);
-            if (error.response) {
-                console.error('Response data:', error.response.data);
-                console.error('Response status:', error.response.status);
-            }
-            throw error; // Propagate the error
-        }
-    }
-}
-
 // Initialize WhatsApp client
 async function initializeClient(userId) {
     console.log('Starting WhatsApp client initialization...');
     try {
-        const store = new CustomStore(process.env.API_URL || 'http://localhost:5000/api', userId);
 
         client = new Client({
-            authStrategy: new RemoteAuth({
-                store: store,
+            authStrategy: new LocalAuth({
                 clientId: `leadchat-whatsapp-client-${userId}`,
-                dataPath: `leadchat-whatsapp-client-${userId}`,
-                backupSyncIntervalMs: 300000, // 5 minutes
+                dataPath: `./whatsapp-sessions/${userId}`
             }),
             puppeteer: {
                 headless: true,
@@ -122,8 +50,6 @@ async function initializeClient(userId) {
             clientReady = true;
             isAuthenticated = true;
             try {
-                await store.save({ session: client.session });
-                console.log('Session saved successfully after client ready');
                 wss.clients.forEach((ws) => {
                     ws.send(JSON.stringify({ type: 'whatsapp_ready' }));
                 });
