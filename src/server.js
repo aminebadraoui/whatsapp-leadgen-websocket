@@ -1,11 +1,8 @@
 const express = require('express');
 const http = require('http');
 const WebSocket = require('ws');
-const { Client, LocalAuth, RemoteAuth } = require('whatsapp-web.js');
+const { Client, LocalAuth } = require('whatsapp-web.js');
 const cors = require('cors');
-const axios = require('axios');
-const fs = require('fs');
-
 
 const app = express();
 const server = http.createServer(app);
@@ -29,7 +26,7 @@ async function initializeClient(userId) {
         client = new Client({
             authStrategy: new LocalAuth({
                 clientId: `client-${userId}`,
-                dataPath: '/app/.wwebjs_auth'
+                dataPath: `/app/.wwebjs_auth/${userId}`
             }),
             puppeteer: {
                 headless: true,
