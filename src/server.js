@@ -157,6 +157,10 @@ wss.on('connection', (ws) => {
         console.log('Received message:', data);
 
         try {
+            if (data.action === 'checkClientStatus') {
+                ws.send(JSON.stringify({ action: 'clientStatus', isReady: clientReady }));
+            }
+
             if (data.action === 'initialize' && data.userId) {
                 userId = data.userId;
                 await initializeClient(userId);
