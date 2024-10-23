@@ -28,9 +28,7 @@ async function initializeClient(userId) {
     try {
 
         client = new Client({
-            authStrategy: new LocalAuth({
-                clientId: `leadchat-whatsapp-client-${userId}`
-            }),
+            authStrategy: new LocalAuth(),
             puppeteer: {
                 headless: true,
                 args: ['--no-sandbox', '--disable-setuid-sandbox'],
