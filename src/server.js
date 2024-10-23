@@ -148,6 +148,8 @@ async function getGroups() {
         throw new Error('WhatsApp client is not ready');
     }
     try {
+        console.log('Getting chats');
+        console.log("client", client);
         const chats = await client.getChats();
         return chats.filter(chat => chat.isGroup).map(group => ({
             id: group.id._serialized,
