@@ -125,7 +125,6 @@ async function initializeClient(userId) {
                 });
             } catch (error) {
                 console.error('Failed to save session after client ready:', error.message);
-                // Consider what action to take if saving fails - maybe retry?
             }
         });
 
@@ -133,13 +132,13 @@ async function initializeClient(userId) {
             console.log('WhatsApp client was disconnected');
             clientReady = false;
             isAuthenticated = false;
-            setTimeout(initializeClient, 5000);
+            setTimeout(() => initializeClient(userId), 5000);
         });
 
         await client.initialize();
     } catch (error) {
         console.error('Error initializing WhatsApp client:', error);
-        setTimeout(initializeClient, 5000);
+        setTimeout(() => initializeClient(userId), 5000);
     }
 }
 
@@ -149,7 +148,7 @@ async function getGroups() {
     }
     try {
         console.log('Getting chats');
-        console.log("client", client);
+        await client.waitForConnection();
         const chats = await client.getChats();
         return chats.filter(chat => chat.isGroup).map(group => ({
             id: group.id._serialized,
@@ -157,7 +156,7 @@ async function getGroups() {
         }));
     } catch (error) {
         console.error('Error getting chats:', error);
-        throw new Error('Failed to get chats');
+        throw new Error('Failed to get chats: ' + error.message);
     }
 }
 
